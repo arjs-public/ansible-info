@@ -1,0 +1,27 @@
+- name: Info Test
+  hosts: localhost
+  gather_facts: no
+  become: no
+
+  vars:
+    do_debug: False
+
+  pre_tasks:
+    - debug: msg="DEBUG | pre_tasks"
+    - info:
+        state: setup
+
+  tasks:
+    - debug: msg="DEBUG | tasks"
+    - info:
+        state: send
+        msg: "Do something"
+    - tempfile:
+       state: directory
+       suffix: .alex
+    - tempfile:
+       state: directory
+       suffix: .berta
+   
+  post_tasks:
+    - debug: msg="DEBUG | post_task"
