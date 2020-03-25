@@ -103,7 +103,7 @@ def main():
 #                dir=module.params['path']
 #            )
 #            close(handle)
-            print "SETUP"
+            print("SETUP")
         elif module.params['state'] == 'send':
             path = mkdtemp(
                 prefix="tmp",
