@@ -67,8 +67,9 @@ EXAMPLES = """
   info:
     state: setup
     phase: deploy
-    step: "Do something"
-    msg: file
+    step: "Step something"
+    msg: "We do something"
+    file: file
 """
 
 RETURN = '''
@@ -79,42 +80,67 @@ path:
   sample: "/tmp/info.json"
 '''
 
+import os
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.pycompat24 import get_exception
 from tempfile import mkstemp, mkdtemp
-import os
+
+path = None
 
 def main():
+    global path
     module = AnsibleModule(
         argument_spec = dict(
             state     = dict(default='send', choices=['send', 'setup']),
             phase     = dict(default=None),
             step      = dict(default=None),
-            msg       = dict(default='')
+            msg       = dict(default='?'),
+            prefix    = dict(default='info'),
+            suffix    = dict(default='.json'),
+            path      = dict(default='/tmp'),
+            file      = dict(default='/tmp/info.json')
         )
     )
 
     try:
-        if module.params['state'] == 'setup':
-            path='.'
-#            handle, path = mkstemp(
-#                prefix=module.params['prefix'],
-#                suffix=module.params['suffix'],
-#                dir=module.params['path']
-#            )
-#            close(handle)
-            print("SETUP")
-        elif module.params['state'] == 'send':
-            path = mkdtemp(
-                prefix="tmp",
-                suffix=".json",
-                dir="/tmp"
+        _prefix = "info" if not "prefix" in module.params else module.params['prefix']
+        _suffix = ".json" if not "suffix" in module.params else module.params['suffix']
+        _path = "/tmp" if not "path"in module.params else module.params['path']
+        _file = "/tmp/info.json" if not "file"in module.params else module.params['file']
+        _state = '' if not 'state' in module.params else module.params['state']
+        if _state == 'setup':
+            global path
+            handle, _file = mkstemp(
+               prefix=_prefix,
+               suffix=_suffix,
+               dir=_path
             )
-            msg = module.params['msg'] if module.params['msg'] else 'leer'
-            with open(os.path.join(path, "info.json"), "w") as file_pointer:
-              file_pointer.write(msg)
+            if not os.path.exists(_file):
+              raise RuntimeError('No file %s found' % _file)
 
-        module.exit_json(changed=True, path=path)
+        elif _state == 'send':
+            step = 'default' if not 'step' in module.params else module.params['step']
+            msg = 'leer' if not 'msg' in module.params else module.params['msg']
+            if not _file: 
+              _file = mkstemp(
+                  prefix=_prefix,
+                  suffix=_suffix,
+                  dir=_path
+              )
+              #path = os.path.join(path, "info.json") 
+          
+            if not os.path.exists(_file):
+              raise RuntimeError('No file %s found' % _file)
+
+            with open(_file, "w") as file_pointer:
+              file_pointer.write(step.strip() + '\n')
+              file_pointer.write(msg.strip() + '\n')
+
+        else:
+          path = ''
+
+        module.exit_json(changed=True, path=_file)
+
     except Exception:
         e = get_exception()
         module.fail_json(msg=str(e))
