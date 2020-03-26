@@ -10,12 +10,21 @@
     - debug: msg="DEBUG | pre_tasks"
     - info:
         state: setup
+        prefix: info
+        suffix: .json
+        path: /tmp
+      register: info_file
+      delegate_to: localhost
+    - debug: msg="DEBUG | {{ info_file }}"
 
   tasks:
     - debug: msg="DEBUG | tasks"
     - info:
         state: send
-        msg: "Do something"
+        step: "Step something:"
+        msg: "We do something"
+        file: "{{ info_file['path'] }}"
+      delegate_to: localhost
     - tempfile:
        state: directory
        suffix: .alex
